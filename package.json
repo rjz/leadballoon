@@ -1,0 +1,15 @@
+{
+  "name": "leadballoon",
+  "version": "0.0.1",
+  "description": "Graceful failure extensions for HTTP servers",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rjz/leadballoon"
+  },
+  "author": "RJ Zaworski <rj@rjzaworski.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rjz/leadballoon/issues"
+  }
+}
