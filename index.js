@@ -32,7 +32,7 @@ module.exports = function (appHandler, opts) {
   // Close the server down
   function close () {
 
-    if (!_isClosing) return;
+    if (_isClosing) return;
 
     _isClosing = true;
 
@@ -69,7 +69,9 @@ module.exports = function (appHandler, opts) {
     d.add(res);
 
     d.run(function () {
-      if (_isClosing) sendError(res, 502);
+      if (_isClosing) {
+        return sendError(res, 502);
+      }
       appHandler(req, res);
     });
   };
