@@ -2,7 +2,7 @@ Lead Balloon
 ===================================
 
 Wraps an instance of `http.Server` with logic to gracefully close out in
-response to an unhandled internal error or a SIGTERM.
+response to an unhandled internal error, programmatic termination, or a SIGTERM.
 
 To close a running server (e.g., to deploy a new version), use `kill`:
 
@@ -15,15 +15,9 @@ As the process closes,
   * All existing connections will remain open until responses can be
       served or the timeout is reached
 
-  * Status updates will be logged
-
-When the process finishes closing,
-
-  * The cluster master (if running as a worker) will receive a
-      `'disconnect'` event
-
-  * This process will exit with 0 (served closed gracefully) or 1 (some
-      connections timed out)
+When the process finishes closing, this server will emit a `'close'` event with
+no arguments (served closed gracefully) or an error (some connections timed
+out).
 
 Usage
 -----------------------------------
@@ -41,11 +35,36 @@ Usage
 
     server.listen(process.env.PORT);
 
-Options:
+Later, to close the server but handle as many open connections as possible:
 
-  * `log` `{Function(String, Object)}` - print a message and any iterable
-    data in the (optional) object. Defaults to `console.log`.
+    server.closeGracefully();
+
+Options:
 
   * `timeout` `Number` - the time (ms) to wait for connections
     to close before forcing a hard shutdown. Defaults to `10000`.
+
+Events:
+
+  * `'close'` - emitted when the server has finished closing with an optional
+    error argument. If error is absent, all connections were cleaned up
+    before the server went down.
+
+### Cleaning up
+
+It's polite to bring the process down. This is the time to print any last words
+and exit with an appropriate status.
+
+    server.on('close', function (err) {
+      if (err) {
+        console.error('Went down hard', err);
+        process.exit(1);
+      }
+
+      process.exit(0);
+    });
+
+## License
+
+MIT
 

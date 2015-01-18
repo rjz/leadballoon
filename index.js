@@ -1,4 +1,3 @@
-var cluster = require('cluster');
 var domain = require('domain');
 var http = require('http');
 
@@ -6,7 +5,7 @@ module.exports = function (appHandler, opts) {
 
   'use strict';
 
-  var httpHandler, httpServer, killTimer, log, timeoutMs;
+  var httpHandler, httpServer, killTimer, timeoutMs;
 
   var _isClosing = false;
 
@@ -19,7 +18,6 @@ module.exports = function (appHandler, opts) {
   }
 
   // Set some sensible defaults
-  log       = opts.log     || console.log.bind(console);
   timeoutMs = opts.timeout || 10000;
 
   // Send an error message
@@ -30,24 +28,18 @@ module.exports = function (appHandler, opts) {
   }
 
   // Close the server down
-  function close () {
+  function closeGracefully () {
 
     if (_isClosing) return;
 
     _isClosing = true;
 
     httpServer.close(function () {
-      log('Connections closed, gracefully exiting now');
-      process.exit(0);
+      httpServer.emit('close');
     });
 
-    if (!cluster.isMaster) {
-      cluster.worker.disconnect();
-    }
-
     killTimer = setTimeout(function () {
-      log('Connections timed out, going down hard');
-      process.exit(1);
+      httpServer.emit('close', new Error('Forced close with open connections'));
     }, timeoutMs);
 
     killTimer.unref();
@@ -60,9 +52,8 @@ module.exports = function (appHandler, opts) {
     var d = domain.create();
 
     d.on('error', function (err) {
-      log('Uncaught Exception', { err: err });
       sendError(res, 500);
-      close();
+      closeGracefully();
     });
 
     d.add(req);
@@ -77,12 +68,13 @@ module.exports = function (appHandler, opts) {
   };
 
   // Add a hook for SIGTERM events
-  process.on('SIGTERM', function () {
-    log('SIGTERM received, closing server');
-    close();
-  });
+  process.on('SIGTERM', closeGracefully);
 
+  // Construct a server around `httpHandler`
   httpServer = http.createServer(httpHandler);
+
+  // Put a kill switch on the instantiated server
+  httpServer.closeGracefully = closeGracefully;
 
   return httpServer;
 };
