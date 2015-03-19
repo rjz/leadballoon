@@ -1,4 +1,3 @@
-var domain = require('domain');
 var http = require('http');
 
 module.exports = function (appHandler, opts) {
@@ -34,9 +33,7 @@ module.exports = function (appHandler, opts) {
 
     _isClosing = true;
 
-    httpServer.close(function () {
-      httpServer.emit('close');
-    });
+    httpServer.close();
 
     killTimer = setTimeout(function () {
       httpServer.emit('close', new Error('Forced close with open connections'));
@@ -45,26 +42,19 @@ module.exports = function (appHandler, opts) {
     killTimer.unref();
   }
 
-  // Wrap the `appHandler` with middleware for setting up the domain and
-  // handling requests while the server is closing.
+  // Wrap the `appHandler` with middleware for handling requests while the
+  // server is closing.
   httpHandler = function (req, res) {
+    if (_isClosing) {
+      return sendError(res, 502);
+    }
 
-    var d = domain.create();
-
-    d.on('error', function (err) {
-      sendError(res, 500);
+    res.endAndCloseServer = function () {
+      sendError(res, 502);
       closeGracefully();
-    });
+    };
 
-    d.add(req);
-    d.add(res);
-
-    d.run(function () {
-      if (_isClosing) {
-        return sendError(res, 502);
-      }
-      appHandler(req, res);
-    });
+    appHandler(req, res);
   };
 
   // Add a hook for SIGTERM events
