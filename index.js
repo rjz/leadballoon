@@ -1,5 +1,7 @@
 var http = require('http');
 
+var BAD_GATEWAY = 502;
+
 module.exports = function (appHandler, opts) {
 
   'use strict';
@@ -20,10 +22,10 @@ module.exports = function (appHandler, opts) {
   timeoutMs = opts.timeout || 10000;
 
   // Send an error message
-  function sendError (res, code) {
-    res.statusCode = code;
+  function sendUnavailable (res) {
+    res.statusCode = BAD_GATEWAY;
     res.setHeader('connection', 'close');
-    res.end(http.STATUS_CODES[code]);
+    res.end(http.STATUS_CODES[BAD_GATEWAY]);
   }
 
   // Close the server down
@@ -46,11 +48,11 @@ module.exports = function (appHandler, opts) {
   // server is closing.
   httpHandler = function (req, res) {
     if (_isClosing) {
-      return sendError(res, 502);
+      return sendUnavailable(res);
     }
 
     res.endAndCloseServer = function () {
-      sendError(res, 502);
+      sendUnavailable(res);
       closeGracefully();
     };
 
