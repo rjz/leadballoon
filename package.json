@@ -7,6 +7,16 @@
     "type": "git",
     "url": "https://github.com/rjz/leadballoon"
   },
+  "keywords": [
+    "graceful",
+    "server",
+    "network",
+    "failure",
+    "exception",
+    "connection",
+    "handler",
+    "manager"
+  ],
   "author": "RJ Zaworski <rj@rjzaworski.com>",
   "license": "MIT",
   "bugs": {
