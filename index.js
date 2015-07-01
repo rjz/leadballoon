@@ -1,3 +1,5 @@
+'use strict';
+
 var http = require('http');
 
 var BAD_GATEWAY = 502;
