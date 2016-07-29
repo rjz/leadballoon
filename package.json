@@ -4,7 +4,9 @@
   "description": "Graceful failure extensions for HTTP servers",
   "main": "index.js",
   "scripts": {
-    "lint": "jshint ."
+    "lint": "jshint .",
+    "pretest": "npm run lint",
+    "test": "node ./test"
   },
   "engines" : {
     "node" : ">=0.12"
@@ -29,6 +31,7 @@
     "url": "https://github.com/rjz/leadballoon/issues"
   },
   "devDependencies": {
-    "jshint": "~2.9.2"
+    "jshint": "~2.9.2",
+    "tape": "~4.6.0"
   }
 }
