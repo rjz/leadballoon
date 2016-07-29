@@ -1,6 +1,8 @@
 Lead Balloon
 ===================================
 
+[![Build Status](https://travis-ci.org/rjz/leadballoon.svg?branch=master)](https://travis-ci.org/rjz/leadballoon)
+
 Wraps an instance of `http.Server` with logic to gracefully close out in
 response to an internal error, programmatic termination, or a SIGTERM.
 
