@@ -35,6 +35,7 @@ module.exports = function (appHandler, opts) {
 
     _isClosing = true;
 
+    httpServer.emit('closing');
     httpServer.close();
 
     killTimer = setTimeout(function () {
