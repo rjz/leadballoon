@@ -2,7 +2,7 @@ Lead Balloon
 ===================================
 
 Wraps an instance of `http.Server` with logic to gracefully close out in
-response to an unhandled internal error, programmatic termination, or a SIGTERM.
+response to an internal error, programmatic termination, or a SIGTERM.
 
 To close a running server (e.g., to deploy a new version), use `kill`:
 
@@ -10,7 +10,7 @@ To close a running server (e.g., to deploy a new version), use `kill`:
 
 As the process closes,
 
-  * All new requests will receive a 502 response
+  * New connections will be refused
 
   * All existing connections will remain open until responses can be
       served or the timeout is reached
@@ -19,25 +19,33 @@ When the process finishes closing, this server will emit a `'close'` event with
 no arguments (served closed gracefully) or an error (some connections timed
 out).
 
+Note: in good, fail-fast fashion, unhandled exceptions in the server logic
+[remain exceptional][rjzaworski-exceptions]. No assumptions are made here about
+whether or not they can be recovered, and no attempt is made to recover them.
+
 Usage
 -----------------------------------
 
-    var createServer = require('leadballoon');
+```js
+var createServer = require('leadballoon');
 
-    function handleRequest (req, res) {
-      res.statusCode = 200;
-      res.end('Hello, world');
-    }
+function handleRequest (req, res) {
+  res.statusCode = 200;
+  res.end('Hello, world');
+}
 
-    var server = createServer(handleRequest, {
-      timeout: 5000,
-    });
+var server = createServer(handleRequest, {
+  timeout: 5000,
+});
 
-    server.listen(process.env.PORT);
+server.listen(process.env.PORT);
+```
 
 Later, to close the server but handle as many open connections as possible:
 
-    server.closeGracefully();
+```js
+server.closeGracefully();
+```
 
 Options:
 
@@ -52,19 +60,22 @@ Events:
 
 ### Cleaning up
 
-It's polite to bring the process down. This is the time to print any last words
-and exit with an appropriate status.
+With the server closed, it's polite to bring the process down. This is the time
+to print any last words and exit with an appropriate status.
 
-    server.on('close', function (err) {
-      if (err) {
-        console.error('Went down hard', err);
-        process.exit(1);
-      }
+```js
+server.on('close', function (err) {
+  if (err) {
+    console.error('Went down hard', err);
+    process.exit(1);
+  }
 
-      process.exit(0);
-    });
+  process.exit(0);
+});
+```
 
 ## License
 
 MIT
 
+[rjzaworski-exceptions]: https://rjzaworski.com/2015/01/javascript-async-exceptions-handling

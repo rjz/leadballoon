@@ -6,8 +6,6 @@ var BAD_GATEWAY = 502;
 
 module.exports = function (appHandler, opts) {
 
-  'use strict';
-
   var httpHandler, httpServer, killTimer, timeoutMs;
 
   var _isClosing = false;
