@@ -10,7 +10,7 @@ To close a running server (e.g., to deploy a new version), use `kill`:
 
 As the process closes,
 
-  * New connections will be refused
+  * New connections will receive a 502 (Bad Gateway)
 
   * All existing connections will remain open until responses can be
       served or the timeout is reached

@@ -75,8 +75,8 @@ test('handles existing requests when failing', function (t) {
   });
 });
 
-test('rejects new connections when failing', function (t) {
-  t.plan(6);
+test('shows bad gateway while closing', function (t) {
+  t.plan(7);
 
   forkServer(function (err, server) {
     t.error(err, 'Opening server');
@@ -94,20 +94,21 @@ test('rejects new connections when failing', function (t) {
     });
 
     setTimeout(function () {
-      server.get('/ok', function (err) {
-        t.equal(err.code, 'ECONNREFUSED', 'rejects new connection');
+      server.get('/ok', function (err, body) {
+        t.error(err);
+        t.equal(body, 'Bad Gateway');
       });
     }, 50);
   });
 });
 
-test('rejects new connections when SIGTERMd', function (t) {
-  t.plan(4);
+test('shows bad gateway after SIGTERM', function (t) {
+  t.plan(5);
 
   forkServer(function (err, server) {
     t.error(err, 'Opening server');
 
-    // Will keep server alive for 1s
+    // Keep server alive
     server.get('/wait?ms=100', function (err, body) {
       t.error(err);
       t.equal(body, 'RESUMED');
@@ -118,8 +119,9 @@ test('rejects new connections when SIGTERMd', function (t) {
     }, 20);
 
     setTimeout(function () {
-      server.get('/ok', function (err) {
-        t.equal(err.code, 'ECONNREFUSED', 'rejects new connection');
+      server.get('/ok', function (err, body) {
+        t.error(err);
+        t.equal(body, 'Bad Gateway');
       });
     }, 50);
   });

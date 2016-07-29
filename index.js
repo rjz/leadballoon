@@ -6,9 +6,10 @@ var BAD_GATEWAY = 502;
 
 module.exports = function (appHandler, opts) {
 
-  var httpHandler, httpServer, killTimer, timeoutMs;
+  var httpServer, timeoutMs;
 
   var _isClosing = false;
+  var pendingResponseCount = 0;
 
   if (typeof appHandler !== 'function') {
     throw new ReferenceError('Handler function is required');
@@ -28,26 +29,32 @@ module.exports = function (appHandler, opts) {
     res.end(http.STATUS_CODES[BAD_GATEWAY]);
   }
 
+  function tryClose () {
+    if (pendingResponseCount === 0) {
+      httpServer.close();
+    }
+  }
+
+  function forceClose () {
+    httpServer.close();
+    httpServer.emit('close', new Error('Forced close with open connections'));
+  }
+
   // Close the server down
   function closeGracefully () {
-
-    if (_isClosing) return;
-
-    _isClosing = true;
-
-    httpServer.emit('closing');
-    httpServer.close();
-
-    killTimer = setTimeout(function () {
-      httpServer.emit('close', new Error('Forced close with open connections'));
-    }, timeoutMs);
-
-    killTimer.unref();
+    if (!_isClosing) {
+      _isClosing = true;
+      httpServer.emit('closing');
+      tryClose();
+      setTimeout(forceClose, timeoutMs).unref();
+    }
   }
 
   // Wrap the `appHandler` with middleware for handling requests while the
   // server is closing.
-  httpHandler = function (req, res) {
+  function httpHandler (req, res) {
+    var _end = res.end;
+
     if (_isClosing) {
       return sendUnavailable(res);
     }
@@ -57,8 +64,15 @@ module.exports = function (appHandler, opts) {
       closeGracefully();
     };
 
+    res.end = function () {
+      --pendingResponseCount;
+      if (_isClosing) tryClose();
+      _end.apply(this, arguments);
+    };
+
+    ++pendingResponseCount;
     appHandler(req, res);
-  };
+  }
 
   // Add a hook for SIGTERM events
   process.on('SIGTERM', closeGracefully);
@@ -71,4 +85,3 @@ module.exports = function (appHandler, opts) {
 
   return httpServer;
 };
-
