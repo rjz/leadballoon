@@ -1,3 +1,5 @@
+'use strict';
+
 var createServer = require('./index');
 
 var port = process.env.port || 5000;
