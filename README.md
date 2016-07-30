@@ -6,20 +6,18 @@ Lead Balloon
 Wraps an instance of `http.Server` with logic to gracefully close out in
 response to an internal error, programmatic termination, or a SIGTERM.
 
-To close a running server (e.g., to deploy a new version), use `kill`:
+As the server closes,
 
-    $ kill -SIGTERM <PID>
-
-As the process closes,
+  * The `'closing'` event is fired
 
   * New connections will receive a 502 (Bad Gateway)
 
   * All existing connections will remain open until responses can be
       served or the timeout is reached
 
-When the process finishes closing, this server will emit a `'close'` event with
-no arguments (served closed gracefully) or an error (some connections timed
-out).
+When the process finishes closing, this server will emit the usual `'close'`
+event with no arguments (served closed gracefully) or an error (some connections
+timed out).
 
 Note: in good, fail-fast fashion, unhandled exceptions in the server logic
 [remain exceptional][rjzaworski-exceptions]. No assumptions are made here about
@@ -29,7 +27,7 @@ Usage
 -----------------------------------
 
 ```js
-var createServer = require('leadballoon');
+var createServer = require('leadballoon').createServer;
 
 function handleRequest (req, res) {
   res.statusCode = 200;
@@ -43,10 +41,10 @@ var server = createServer(handleRequest, {
 server.listen(process.env.PORT);
 ```
 
-Later, to close the server but handle as many open connections as possible:
+Later, to close the server while resolving as many open connections as possible:
 
 ```js
-server.closeGracefully();
+server.close();
 ```
 
 Options:
@@ -56,9 +54,7 @@ Options:
 
 Events:
 
-  * `'close'` - emitted when the server has finished closing with an optional
-    error argument. If error is absent, all connections were cleaned up
-    before the server went down.
+  * `'closing'` - emitted when the server begins shutting down
 
 ### Cleaning up
 
