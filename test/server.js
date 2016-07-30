@@ -1,44 +1,44 @@
 'use strict';
 
-var createServer = require('../index');
 var url = require('url');
+
+var leadballoon = require('../index');
 
 var BASE_PORT = 60001;
 var PORT_ATTEMPTS = 1000;
 
-function handleTestRequest (req, res) {
-
-  var parsedUrl = url.parse(req.url, true);
-
-  switch (parsedUrl.pathname) {
-
-    case '/ok':
-      return res.end('OK');
-
-    case '/throw':
-      throw new Error('Just exceptional');
-
-    case '/wait':
-      var timeout = parsedUrl.query.ms;
-      if (!timeout) {
-        throw new Error('Missing timeout');
-      }
-
-      return setTimeout(function () {
-        res.end('RESUMED');
-      }, parseInt(timeout, 10));
-
-    case '/failviareq':
-      return res.endAndCloseServer();
-
-    default:
-      throw new Error('Not implemented');
-  }
-}
-
 function listen (port, attemptsRemaining) {
 
-  var server = createServer(handleTestRequest, {
+  var server = leadballoon.createServer(function handleTestRequest (req, res) {
+
+    var parsedUrl = url.parse(req.url, true);
+
+    switch (parsedUrl.pathname) {
+
+      case '/ok':
+        return res.end('OK');
+
+      case '/throw':
+        throw new Error('Just exceptional');
+
+      case '/wait':
+        var timeout = parsedUrl.query.ms;
+        if (!timeout) {
+          throw new Error('Missing timeout');
+        }
+
+        return setTimeout(function () {
+          res.end('RESUMED');
+        }, parseInt(timeout, 10));
+
+      case '/failviareq':
+        leadballoon.sendUnavailable(res);
+        return server.close();
+
+      default:
+        throw new Error('Not implemented');
+    }
+  }, {
     timeout: 5000,
   });
 
@@ -53,6 +53,9 @@ function listen (port, attemptsRemaining) {
     }
     throw err;
   });
+
+  // Add a hook for SIGTERM events
+  process.on('SIGTERM', server.close.bind(server));
 }
 
 listen(BASE_PORT, PORT_ATTEMPTS);
