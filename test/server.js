@@ -42,9 +42,21 @@ function listen (port, attemptsRemaining) {
     timeout: 5000,
   });
 
+  function proxyEvent (ee, name) {
+    ee.on(name, function () {
+      process.send({
+        name: name,
+        args: [].slice.call(arguments)
+      });
+    });
+  }
+
   server.listen(port, function () {
     // Tell the test suite what port to use
     process.send({ port: port });
+
+    proxyEvent(server, 'closing');
+    proxyEvent(server, 'close');
   });
 
   server.on('error', function (err) {
