@@ -3,17 +3,14 @@ Lead Balloon
 
 [![Build Status](https://travis-ci.org/rjz/leadballoon.svg?branch=master)](https://travis-ci.org/rjz/leadballoon)
 
-Wraps an instance of `http.Server` with logic to gracefully close out in
-response to an internal error, programmatic termination, or a SIGTERM.
+Wraps `http.Server` with graceful shutdown logic. Useful for ensuring service
+within fail-fast applications.
 
-As the server closes,
+With its default configuration, a `LeadBalloon` server will close out by:
 
-  * The `'closing'` event is fired
-
-  * New connections will receive a 502 (Bad Gateway)
-
-  * All existing connections will remain open until responses can be
-      served or the timeout is reached
+  1. Emitting a `'closing'` event
+  2. Servicing all existing requests (subject to a timeout)
+  3. Sending a 502 (Bad Gateway) response to any new requests
 
 When the process finishes closing, this server will emit the usual `'close'`
 event with no arguments (served closed gracefully) or an error (some connections
