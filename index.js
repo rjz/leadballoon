@@ -11,10 +11,18 @@ function sendUnavailable (res) {
   res.end(http.STATUS_CODES[BAD_GATEWAY]);
 }
 
+function defaultClosingHandler (req, res) {
+  sendUnavailable(res);
+}
+
 // LeadBalloon wraps `http.Server` with graceful shutdown logic
 function LeadBalloon (requestListener, opts) {
 
-  this._timeout = opts && opts.timeout || 10000;
+  if (!opts) opts = {};
+
+  this._timeout = opts.timeout || 10000;
+  this._closingHandler = opts.closingHandler || defaultClosingHandler;
+
   this._isClosing = false;
 
   // Instantiate new server
@@ -25,22 +33,23 @@ util.inherits(LeadBalloon, http.Server);
 
 // middleware contains server shutdown logic
 LeadBalloon.prototype.middleware = function (requestListener) {
+  var server = this;
   return function (req, res) {
 
-    // Deny new requests while the server is shutting down
-    if (this._isClosing) {
-      return sendUnavailable(res);
+    // Use closingHandler while the server is shutting down
+    if (server._isClosing) {
+      return server._closingHandler(req, res);
     }
 
     req.connection.once('close', function () {
-      if (this._isClosing) {
-        this.tryClose();
+      if (server._isClosing) {
+        server.tryClose();
       }
-    }.bind(this));
+    });
 
     // Hand off to the provided handler
     requestListener.apply(null, arguments);
-  }.bind(this);
+  };
 };
 
 // close emits a `'closing'` event and initiates server shutdown
