@@ -49,8 +49,11 @@ server.close();
 
 Options:
 
-  * `timeout` `Number` - the time (ms) to wait for connections
-    to close before forcing a hard shutdown. Defaults to `10000`.
+  * `timeout` `Number` - the time (ms) to wait for connections to close before
+      forcing a hard shutdown. Default: `10000`.
+
+  * `closingHandler` `Function` - a `(req, res)` handler for requests received
+      while the server is shutting down. Default: `leadballoon.sendUnavailable`.
 
 Events:
 
