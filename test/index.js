@@ -34,7 +34,7 @@ function forkServer (cb) {
 
   server.on('error', cb);
 
-  server.on('message', function (data) {
+  server.once('message', function (data) {
     if (!data.port) throw new Error('Expected port from child server');
     port = data.port;
     server.get = request;
@@ -52,6 +52,33 @@ test('server responds', function (t) {
       t.error(err, 'Request sent');
       t.equal(body, 'OK');
       server.kill();
+    });
+  });
+});
+
+test('server emits events', function (t) {
+  t.plan(5);
+
+  forkServer(function (err, server) {
+    t.error(err, 'Opening server');
+
+    var messages = [];
+
+    server.on('message', function (msg) {
+      messages.push(msg);
+    });
+
+    server.get('/wait?ms=50', function (err, body) {
+      t.error(err);
+      t.equal(messages[0].name, 'closing');
+      setTimeout(function () {
+        server.kill();
+        t.equal(messages[1].name, 'close');
+      }, 50);
+    });
+
+    server.get('/failviareq', function (err) {
+      t.error(err);
     });
   });
 });
