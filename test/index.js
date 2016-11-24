@@ -5,8 +5,8 @@ var fork = require('child_process').fork;
 var path = require('path');
 var test = require('tape');
 
-function forkServer (cb) {
-  var server = fork(path.resolve(__dirname, 'server'));
+function forkServer (cb, forkOpts) {
+  var server = fork(path.resolve(__dirname, 'server'), forkOpts);
   var port;
 
   function request (path, callback) {
@@ -167,5 +167,5 @@ test('still explodes on exception', function (t) {
     server.get('/throw', function (err) {
       t.equal(err.code, 'ECONNRESET', 'rejects new connection');
     });
-  });
+  }, { silent: true });
 });
