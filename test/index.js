@@ -89,7 +89,7 @@ test('handles existing requests when failing', function (t) {
   forkServer(function (err, server) {
     t.error(err, 'Opening server');
 
-    server.get('/wait?ms=50', function (err, body) {
+    server.get('/wait?ms=250', function (err, body) {
       t.error(err);
       t.equal(body, 'RESUMED');
       server.kill();

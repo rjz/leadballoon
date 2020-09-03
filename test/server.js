@@ -38,8 +38,6 @@ function listen (port, attemptsRemaining) {
       default:
         throw new Error('Not implemented');
     }
-  }, {
-    timeout: 5000,
   });
 
   function proxyEvent (ee, name) {

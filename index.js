@@ -20,7 +20,6 @@ function LeadBalloon (requestListener, opts) {
 
   if (!opts) opts = {};
 
-  this._timeout = opts.timeout || 10000;
   this._closingHandler = opts.closingHandler || defaultClosingHandler;
 
   this._isClosing = false;
@@ -57,8 +56,8 @@ LeadBalloon.prototype.close = function () {
   if (!this._isClosing) {
     this._isClosing = true;
     this.emit('closing');
+    this.unref();
     this.tryClose();
-    setTimeout(http.Server.prototype.close.bind(this), this._timeout).unref();
   }
 };
 
@@ -72,8 +71,8 @@ LeadBalloon.prototype.tryClose = function () {
   }.bind(this));
 };
 
-function createServer (appHandler) {
-  return new LeadBalloon(appHandler);
+function createServer (appHandler, opts) {
+  return new LeadBalloon(appHandler, opts);
 }
 
 // Compatibility for previous versions of leadballoon

@@ -3,13 +3,12 @@ Lead Balloon
 
 [![Build Status](https://travis-ci.org/rjz/leadballoon.svg?branch=master)](https://travis-ci.org/rjz/leadballoon)
 
-Wraps `http.Server` with graceful shutdown logic. Useful for ensuring service
-within fail-fast applications.
+Wraps `http.Server` with graceful shutdown logic.
 
 With its default configuration, a `LeadBalloon` server will close out by:
 
   1. Emitting a `'closing'` event
-  2. Servicing all existing requests (subject to a timeout)
+  2. Servicing all existing requests (subject to `http.Server` timeouts)
   3. Sending a 502 (Bad Gateway) response to any new requests
 
 When the process finishes closing, this server will emit the usual `'close'`
@@ -31,9 +30,7 @@ function handleRequest (req, res) {
   res.end('Hello, world');
 }
 
-var server = createServer(handleRequest, {
-  timeout: 5000,
-});
+var server = createServer(handleRequest);
 
 server.listen(process.env.PORT);
 ```
@@ -46,9 +43,6 @@ server.close();
 
 Options:
 
-  * `timeout` `Number` - the time (ms) to wait for connections to close before
-      forcing a hard shutdown. Default: `10000`.
-
   * `closingHandler` `Function` - a `(req, res)` handler for requests received
       while the server is shutting down. Default: `leadballoon.sendUnavailable`.
 
@@ -56,23 +50,8 @@ Events:
 
   * `'closing'` - emitted when the server begins shutting down
 
-### Cleaning up
-
-With the server closed, it's polite to bring the process down. This is the time
-to print any last words and exit with an appropriate status.
-
-```js
-server.on('close', function (err) {
-  if (err) {
-    console.error('Went down hard', err);
-    process.exit(1);
-  }
-
-  process.exit(0);
-});
-```
-
-## License
+License
+-----------------------------------
 
 MIT
 
